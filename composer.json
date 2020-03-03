@@ -1,0 +1,24 @@
+{
+  "name": "novembit/wp-universal-patcher",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "php": ">=7.2",
+    "ext-mbstring": "*",
+    "ext-json": "*",
+    "diazoxide/wp-lib-option": "dev-master"
+  },
+  "require-dev": {
+  },
+  "autoload": {
+    "psr-4": {
+      "NovemBit\\wp\\plugins\\UniversalPatcher\\": "src/"
+    }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    }
+  ]
+}
