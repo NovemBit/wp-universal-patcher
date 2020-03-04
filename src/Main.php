@@ -36,6 +36,14 @@ class Main
             add_action('admin_menu', [$this, 'admin_menu']);
         }
 
+//        add_filter('upgrader_package_options',function ($options){
+//            $this->restore_patches();
+//            return $options;
+//        });
+//        add_filter('upgrader_process_complete',function (){
+//            $this->apply_patches();
+//        });
+
 //        $patch = new Patch(
 //            [
 //                'path' => 'wp-includes/l10n.php',
@@ -163,7 +171,6 @@ class Main
             switch ($_POST['action']) {
                 case "1":
                     $this->apply_patches();
-                    echo "done";
                     break;
                 case "0":
                     $this->restore_patches();
