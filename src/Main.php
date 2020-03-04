@@ -104,6 +104,7 @@ class Main
                 'request_source_type_map',
                 [],
                 [
+                    'main_params' => ['style' => 'grid-template-columns: repeat(2, 1fr);'],
                     'parent' => $this->plugin_name,
                     'type' => Option::TYPE_GROUP,
                     'method' => Option::METHOD_MULTIPLE,
