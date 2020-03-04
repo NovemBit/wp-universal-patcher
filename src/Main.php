@@ -32,7 +32,9 @@ class Main
 
         $this->plugin_file = $plugin_file;
 
-        add_action('admin_menu', [$this, 'admin_menu']);
+        if (apply_filters($this->plugin_file . '-enable-admin-ui', true)) {
+            add_action('admin_menu', [$this, 'admin_menu']);
+        }
 
 //        $patch = new Patch(
 //            [
@@ -49,6 +51,44 @@ class Main
 //
     }
 
+    public function get_options()
+    {
+        return Option::expandOptions($this->get_settings());
+    }
+
+    /**
+     * @return Patch[]
+     */
+    private function get_patches()
+    {
+        $patches_configs = $this->get_options()['patches'] ?? [];
+        $patches = [];
+        foreach ($patches_configs as $config) {
+            $patches[] = new Patch([
+                'path' => $config['path'] ?? null,
+                'replace_map' => $config['replace_map'] ?? []
+            ]);
+        }
+        return $patches;
+    }
+
+    private function apply_patches()
+    {
+        $patches = $this->get_patches();
+
+        foreach ($patches as $patch) {
+            $patch->apply();
+        }
+    }
+
+    private function restore_patches()
+    {
+        $patches = $this->get_patches();
+        foreach ($patches as $patch) {
+            $patch->restore();
+        }
+    }
+
     public function get_settings()
     {
         return [
@@ -60,11 +100,43 @@ class Main
                     'type' => Option::TYPE_GROUP,
                     'method' => Option::METHOD_MULTIPLE,
                     'template' => [
-                        'path' => ['type' => Option::TYPE_TEXT, 'label' => 'path'],
-                        'replace_map' => [
-                            'type' => Option::TYPE_OBJECT,
-                            'field' => ['type' => Option::TYPE_TEXT]
+                        'path' => [
+                            'type' => Option::TYPE_TEXT,
+                            'label' => 'File Path'
                         ],
+                        'replace_map' => [
+                            'type' => Option::TYPE_GROUP,
+                            'method' => Option::METHOD_MULTIPLE,
+                            'template' => [
+                                'pattern' => [
+                                    'type' => Option::TYPE_TEXT,
+                                    'label' => 'Pattern/Regex'
+                                ],
+                                'replace' => [
+                                    'markup' => Option::MARKUP_TEXTAREA,
+                                    'type' => Option::TYPE_TEXT,
+                                    'label' => 'Replace'
+                                ]
+                            ],
+                            'label' => 'Replace Patterns'
+                        ],
+                    ],
+                    'template_params' => [
+                        'description' => function ($key, $value) {
+
+                            $patch = new Patch(
+                                [
+                                    'path' => $value['path'] ?? null,
+                                    'replace_map' => $value['replace_map'] ?? []
+                                ]
+                            );
+
+                            if ($patch->isApplied()) {
+                                return "Applied!";
+                            }
+
+                            return "Not applied.";
+                        }
                     ],
                     'label' => 'Patches'
                 ]
@@ -85,13 +157,31 @@ class Main
 
     }
 
-    public function admin_page_patches()
-    {
-
-    }
-
     public function admin_page()
     {
+        if (isset($_POST['patch'], $_POST['action']) && wp_verify_nonce($_POST['patch'], $this->plugin_name)) {
+            switch ($_POST['action']) {
+                case "1":
+                    $this->apply_patches();
+                    echo "done";
+                    break;
+                case "0":
+                    $this->restore_patches();
+                    break;
+            }
+        }
+        ?>
+        <div class="wrapper">
+            <h1><?php echo $this->plugin_title; ?></h1>
+            <form method="post">
+                <button name="action" class="button button-primary" type="submit" value="1">Apply all</button>
+                <button name="action" class="button button-secondary" type="submit" value="0">Restore all</button>
+                <?php wp_nonce_field($this->plugin_name, 'patch'); ?>
+            </form>
+        </div>
+
+        <?php
+
         Option::printForm($this->plugin_name, $this->get_settings());
     }
 }
